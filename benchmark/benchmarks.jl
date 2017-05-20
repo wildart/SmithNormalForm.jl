@@ -10,8 +10,8 @@ srand(2903872398473)
     i, j = 2, 3
     a, b, c, d = 1, 2, 3, 4
 
-    @bench "rowelementation" SmithNormalForm.rowelementation(D, a, b, c, d, i, j)
-    @bench "colelementation" SmithNormalForm.colelementation(D, a, b, c, d, i, j)
+    @bench "rowelimination" SmithNormalForm.rowelimination(D, a, b, c, d, i, j)
+    @bench "colelimination" SmithNormalForm.colelimination(D, a, b, c, d, i, j)
 
     Z = sprand(Int, 100, 120, 0.3)
     Z[Z .< 0] = -1

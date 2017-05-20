@@ -33,7 +33,7 @@ function cswap{R}(M::AbstractArray{R,2}, c1, c2)
     return
 end
 
-function rowelementation{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
+function rowelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
     I = view(D, i, :)
     @inbounds for k in eachindex(I)
         t = D[i,k]
@@ -44,13 +44,9 @@ function rowelementation{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::In
     return
 end
 
-function colelementation{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
+function colelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
     I = view(D, :, i)
-    # I = D[:,i]
-    # J = D[:,j]
     @inbounds for k in eachindex(I)
-        # t = I[k]
-        # s = J[k]
         t = D[k,i]
         s = D[k,j]
         D[k,i] = a*t + b*s
@@ -73,9 +69,9 @@ function rowpivot{R}(U::AbstractArray{R,2},
         x = divide(a, g)
         y = divide(b, g)
 
-        rowelementation(D, s, t, -y, x, i, k)
-        rowelementation(Uinv, s, t, -y, x, i, k)
-        colelementation(U, x, y, -t, s, i, k)
+        rowelimination(D, s, t, -y, x, i, k)
+        rowelimination(Uinv, s, t, -y, x, i, k)
+        colelimination(U, x, y, -t, s, i, k)
     end
 end
 
@@ -93,9 +89,9 @@ function colpivot{R}(V::AbstractArray{R,2},
         x = divide(a, g)
         y = divide(b, g)
 
-        colelementation(D, s, t, -y, x, j, k)
-        colelementation(Vinv, s, t, -y, x, j, k)
-        rowelementation(V, x, y, -t, s, j, k)
+        colelimination(D, s, t, -y, x, j, k)
+        colelimination(Vinv, s, t, -y, x, j, k)
+        rowelimination(V, x, y, -t, s, j, k)
     end
 end
 
@@ -188,8 +184,8 @@ function snf{R}(M::AbstractArray{R,2})
             pass = true
             D[i+1,i] = D[i+1,i+1]
 
-            colelementation(Vinv, one(R), one(R), zero(R), one(R), i, i+1)
-            rowelementation(V, one(R), zero(R), -one(R), one(R), i, i+1)
+            colelimination(Vinv, one(R), one(R), zero(R), one(R), i, i+1)
+            rowelimination(V, one(R), zero(R), -one(R), one(R), i, i+1)
 
             smithpivot(U, Uinv, V, Vinv, D, i, i)
         end
