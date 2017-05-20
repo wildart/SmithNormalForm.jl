@@ -111,21 +111,47 @@ function smithpivot{R}(U::AbstractArray{R,2},
     end
 end
 
-function snf{R}(M::AbstractArray{R,2})
+function init{R,Ti}(M::AbstractSparseMatrix{R,Ti})
     D = copy(M)
     rows, cols = size(M)
 
-    U = issparse(M) ? spzeros(R, rows, rows) : zeros(R, rows, rows)
+    U = spzeros(R, rows, rows)
     for i in 1:rows
         U[i,i] = one(R)
     end
     Uinv = copy(U)
 
-    V = issparse(M) ? spzeros(R, cols, cols) : zeros(R, cols, cols)
+    V = spzeros(R, cols, cols)
     for i in 1:cols
         V[i,i] = one(R)
     end
     Vinv = copy(V)
+
+    return U, Uinv, V, Vinv, D
+end
+
+function init{R}(M::AbstractMatrix{R})
+    D = copy(M)
+    rows, cols = size(M)
+
+    U = zeros(R, rows, rows)
+    for i in 1:rows
+        U[i,i] = one(R)
+    end
+    Uinv = copy(U)
+
+    V = zeros(R, cols, cols)
+    for i in 1:cols
+        V[i,i] = one(R)
+    end
+    Vinv = copy(V)
+
+    return U, Uinv, V, Vinv, D
+end
+
+function snf{R}(M::AbstractMatrix{R})
+    rows, cols = size(M)
+    U, Uinv, V, Vinv, D = init(M)
 
     t = 1
     for j in 1:cols
