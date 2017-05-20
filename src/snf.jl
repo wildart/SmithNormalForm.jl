@@ -45,11 +45,14 @@ function rowelementation{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::In
 end
 
 function colelementation{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
-    I = D[:,i]
-    J = D[:,j]
+    I = view(D, :, i)
+    # I = D[:,i]
+    # J = D[:,j]
     @inbounds for k in eachindex(I)
-        t = I[k]
-        s = J[k]
+        # t = I[k]
+        # s = J[k]
+        t = D[k,i]
+        s = D[k,j]
         D[k,i] = a*t + b*s
         D[k,j] = c*t + d*s
     end
