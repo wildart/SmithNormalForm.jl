@@ -6,6 +6,11 @@
 
 The [Smith normal form](https://en.wikipedia.org/wiki/Smith_normal_form) decomposition implementation in Julia.
 
+## Installation
+```julia
+julia> Pkg.clone("https://github.com/wildart/SmithNormalForm.jl.git")
+```
+
 ## Example
 
 ```julia
