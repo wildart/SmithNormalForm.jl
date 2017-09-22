@@ -19,15 +19,15 @@ struct Smith{T,S<:AbstractMatrix} <: Factorization{T}
                Q::AbstractMatrix{T}, Qinv::AbstractMatrix{T},
                A::AbstractVector{T}) where {T,S} = new(P, Pinv, Q, Qinv, A)
 end
-Smith{T}(P::AbstractMatrix{T}, Q::AbstractMatrix{T}, A::AbstractVector{T}) =
+Smith(P::AbstractMatrix{T}, Q::AbstractMatrix{T}, A::AbstractVector{T}) where {T} =
     Smith{T,typeof(A)}(P, similar(P, 0, 0), Q, similar(Q, 0, 0), A)
 
-function snfact{T}(X::AbstractMatrix{T}; inverse=true)
+function snfact(X::AbstractMatrix{T}; inverse=true) where {T}
     P, Q, A, Pinv, Qinv = snf(X, inverse=inverse)
     return Smith{T, typeof(X)}(P, Pinv, Q, Qinv, diag(A))
 end
 
-function getindex{T,S}(F::Smith{T,S}, d::Symbol)
+function getindex(F::Smith{T,S}, d::Symbol) where {T,S}
     if d == :P
         return F.P
     elseif d == :Q

@@ -1,11 +1,11 @@
 # Smith Normal Form
 
-function divisable{R}(y::R, x::R )
+function divisable(y::R, x::R ) where {R}
   x == zero(R) && return y == zero(R)
   return div(y,x)*x == y
 end
 
-function divide{R}(y::R, x::R)
+function divide(y::R, x::R) where {R}
     if x != -one(R)
         return div(y,x)
     else
@@ -35,7 +35,7 @@ function ccountnz(X, j)
     return c
 end
 
-function rswap!{R}(M::AbstractArray{R,2}, r1::Int, r2::Int)
+function rswap!(M::AbstractArray{R,2}, r1::Int, r2::Int) where {R}
     r1 == r2 && return M
     m = size(M, 2)
     @inbounds for i in 1:m
@@ -46,7 +46,7 @@ function rswap!{R}(M::AbstractArray{R,2}, r1::Int, r2::Int)
     return M
 end
 
-function cswap!{R}(M::AbstractArray{R,2}, c1::Int, c2::Int)
+function cswap!(M::AbstractArray{R,2}, c1::Int, c2::Int) where {R}
     c1 == c2 && return M
     n = size(M, 1)
     @inbounds for j in 1:n
@@ -57,7 +57,7 @@ function cswap!{R}(M::AbstractArray{R,2}, c1::Int, c2::Int)
     return M
 end
 
-function rowelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
+function rowelimination(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int) where {R}
     m = size(D, 2)
     @inbounds for k in 1:m
         t = D[i,k]
@@ -68,7 +68,7 @@ function rowelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int
     return D
 end
 
-function colelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
+function colelimination(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int) where {R}
     n = size(D, 1)
     @inbounds for k in 1:n
         t = D[k,i]
@@ -79,10 +79,10 @@ function colelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int
     return D
 end
 
-function rowpivot{R}(U::AbstractArray{R,2},
-                     Uinv::AbstractArray{R,2},
-                     D::AbstractArray{R,2},
-                     i, j; inverse=true)
+function rowpivot(U::AbstractArray{R,2},
+                  Uinv::AbstractArray{R,2},
+                  D::AbstractArray{R,2},
+                  i, j; inverse=true) where {R}
     for k in findn(D[:,j]) |> reverse
         a = D[i,j]
         b = D[k,j]
@@ -99,10 +99,10 @@ function rowpivot{R}(U::AbstractArray{R,2},
     end
 end
 
-function colpivot{R}(V::AbstractArray{R,2},
-                     Vinv::AbstractArray{R,2},
-                     D::AbstractArray{R,2},
-                     i, j; inverse=true)
+function colpivot(V::AbstractArray{R,2},
+                  Vinv::AbstractArray{R,2},
+                  D::AbstractArray{R,2},
+                  i, j; inverse=true) where {R}
     for k in findn(D[i,:])|> reverse
         a = D[i,j]
         b = D[i,k]
@@ -119,12 +119,12 @@ function colpivot{R}(V::AbstractArray{R,2},
     end
 end
 
-function smithpivot{R}(U::AbstractArray{R,2},
-                       Uinv::AbstractArray{R,2},
-                       V::AbstractArray{R,2},
-                       Vinv::AbstractArray{R,2},
-                       D::AbstractArray{R,2},
-                       i, j; inverse=true)
+function smithpivot(U::AbstractArray{R,2},
+                    Uinv::AbstractArray{R,2},
+                    V::AbstractArray{R,2},
+                    Vinv::AbstractArray{R,2},
+                    D::AbstractArray{R,2},
+                    i, j; inverse=true) where {R}
 
     pivot = D[i,j]
     @assert pivot != zero(R) "Pivot cannot be zero"
@@ -134,7 +134,7 @@ function smithpivot{R}(U::AbstractArray{R,2},
     end
 end
 
-function init{R,Ti}(M::AbstractSparseMatrix{R,Ti}; inverse=true)
+function init(M::AbstractSparseMatrix{R,Ti}; inverse=true) where {R, Ti}
     D = copy(M)
     rows, cols = size(M)
 
@@ -153,7 +153,7 @@ function init{R,Ti}(M::AbstractSparseMatrix{R,Ti}; inverse=true)
     return U, V, D, Uinv, Vinv
 end
 
-function init{R}(M::AbstractMatrix{R}; inverse=true)
+function init(M::AbstractMatrix{R}; inverse=true) where {R}
     D = copy(M)
     rows, cols = size(M)
 
@@ -172,7 +172,7 @@ function init{R}(M::AbstractMatrix{R}; inverse=true)
     return U, V, D, Uinv, Vinv
 end
 
-function snf{R}(M::AbstractMatrix{R}; inverse=true, debug=false)
+function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
     rows, cols = size(M)
     U, V, D, Uinv, Vinv = init(M, inverse=inverse)
 
@@ -190,7 +190,7 @@ function snf{R}(M::AbstractMatrix{R}; inverse=true, debug=false)
             # Good pivot row for j-th column is the one
             # that have a smallest number of elements
             idxs = findn(D[:,j])
-            rsize, i = mapslices(countnz, D[idxs, :], 2) |> findmin
+            rsize, i = mapslices(x->count(!iszero, x), D[idxs, :], 2) |> findmin
             prow = idxs[i]
         end
 
