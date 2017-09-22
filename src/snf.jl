@@ -52,7 +52,7 @@ function cswap!{R}(M::AbstractArray{R,2}, c1::Int, c2::Int)
     @inbounds for j in 1:n
         tmp = M[j, c1]
         M[j, c1] = M[j, c2]
-        M[j, c2] = tmp[j]
+        M[j, c2] = tmp
     end
     return M
 end
