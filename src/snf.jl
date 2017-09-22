@@ -13,52 +13,76 @@ function divide{R}(y::R, x::R)
     end
 end
 
-function rswap{R}(M::AbstractArray{R,2}, r1, r2)
-    r1 == r2 && return
-    for i in eachindex(M[r1,:])
+function rcountnz(X, i)
+    n = size(X, 1)
+    c = 0
+    for j in 1:n
+        if X[j, i] != 0
+           c += 1
+        end
+    end
+    return c
+end
+
+function ccountnz(X, j)
+    m = size(X, 2)
+    c = 0
+    for i in 1:m
+        if X[j, i] != 0
+           c += 1
+        end
+    end
+    return c
+end
+
+function rswap!{R}(M::AbstractArray{R,2}, r1::Int, r2::Int)
+    r1 == r2 && return M
+    m = size(M, 2)
+    @inbounds for i in 1:m
         tmp = M[r1, i]
         M[r1, i] = M[r2, i]
         M[r2, i] = tmp
     end
-    return
+    return M
 end
 
-function cswap{R}(M::AbstractArray{R,2}, c1, c2)
-    c1 == c2 && return
-    for j in eachindex(M[:,c1])
+function cswap!{R}(M::AbstractArray{R,2}, c1::Int, c2::Int)
+    c1 == c2 && return M
+    n = size(M, 1)
+    @inbounds for j in 1:n
         tmp = M[j, c1]
         M[j, c1] = M[j, c2]
-        M[j, c2] = tmp
+        M[j, c2] = tmp[j]
     end
-    return
+    return M
 end
 
 function rowelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
-    I = view(D, i, :)
-    @inbounds for k in eachindex(I)
+    m = size(D, 2)
+    @inbounds for k in 1:m
         t = D[i,k]
         s = D[j,k]
         D[i,k] = a*t + b*s
         D[j,k] = c*t + d*s
     end
-    return
+    return D
 end
 
 function colelimination{R}(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int)
-    I = view(D, :, i)
-    @inbounds for k in eachindex(I)
+    n = size(D, 1)
+    @inbounds for k in 1:n
         t = D[k,i]
         s = D[k,j]
         D[k,i] = a*t + b*s
         D[k,j] = c*t + d*s
     end
-    return
+    return D
 end
 
 function rowpivot{R}(U::AbstractArray{R,2},
                      Uinv::AbstractArray{R,2},
                      D::AbstractArray{R,2},
-                     i, j)
+                     i, j; inverse=true)
     for k in findn(D[:,j]) |> reverse
         a = D[i,j]
         b = D[k,j]
@@ -70,7 +94,7 @@ function rowpivot{R}(U::AbstractArray{R,2},
         y = divide(b, g)
 
         rowelimination(D, s, t, -y, x, i, k)
-        rowelimination(Uinv, s, t, -y, x, i, k)
+        inverse && rowelimination(Uinv, s, t, -y, x, i, k)
         colelimination(U, x, y, -t, s, i, k)
     end
 end
@@ -78,7 +102,7 @@ end
 function colpivot{R}(V::AbstractArray{R,2},
                      Vinv::AbstractArray{R,2},
                      D::AbstractArray{R,2},
-                     i, j)
+                     i, j; inverse=true)
     for k in findn(D[i,:])|> reverse
         a = D[i,j]
         b = D[i,k]
@@ -90,7 +114,7 @@ function colpivot{R}(V::AbstractArray{R,2},
         y = divide(b, g)
 
         colelimination(D, s, t, -y, x, j, k)
-        colelimination(Vinv, s, t, -y, x, j, k)
+        inverse && colelimination(Vinv, s, t, -y, x, j, k)
         rowelimination(V, x, y, -t, s, j, k)
     end
 end
@@ -100,18 +124,17 @@ function smithpivot{R}(U::AbstractArray{R,2},
                        V::AbstractArray{R,2},
                        Vinv::AbstractArray{R,2},
                        D::AbstractArray{R,2},
-                       i, j)
+                       i, j; inverse=true)
 
     pivot = D[i,j]
     @assert pivot != zero(R) "Pivot cannot be zero"
-
-    while countnz(D[i,:]) > 1 || countnz(D[:,j]) > 1
-        colpivot(V, Vinv, D, i, j)
-        rowpivot(U, Uinv, D, i, j)
+    while ccountnz(D,i) > 1 || rcountnz(D,j) > 1
+        colpivot(V, Vinv, D, i, j, inverse=inverse)
+        rowpivot(U, Uinv, D, i, j, inverse=inverse)
     end
 end
 
-function init{R,Ti}(M::AbstractSparseMatrix{R,Ti})
+function init{R,Ti}(M::AbstractSparseMatrix{R,Ti}; inverse=true)
     D = copy(M)
     rows, cols = size(M)
 
@@ -119,18 +142,18 @@ function init{R,Ti}(M::AbstractSparseMatrix{R,Ti})
     for i in 1:rows
         U[i,i] = one(R)
     end
-    Uinv = copy(U)
+    Uinv = inverse ? copy(U) : spzeros(R, 0, 0)
 
     V = spzeros(R, cols, cols)
     for i in 1:cols
         V[i,i] = one(R)
     end
-    Vinv = copy(V)
+    Vinv = inverse ? copy(V) : spzeros(R, 0, 0)
 
-    return U, Uinv, V, Vinv, D
+    return U, V, D, Uinv, Vinv
 end
 
-function init{R}(M::AbstractMatrix{R})
+function init{R}(M::AbstractMatrix{R}; inverse=true)
     D = copy(M)
     rows, cols = size(M)
 
@@ -138,27 +161,27 @@ function init{R}(M::AbstractMatrix{R})
     for i in 1:rows
         U[i,i] = one(R)
     end
-    Uinv = copy(U)
+    Uinv = inverse ? copy(U) : zeros(R, 0, 0)
 
     V = zeros(R, cols, cols)
     for i in 1:cols
         V[i,i] = one(R)
     end
-    Vinv = copy(V)
+    Vinv = inverse ? copy(V) : zeros(R, 0, 0)
 
-    return U, Uinv, V, Vinv, D
+    return U, V, D, Uinv, Vinv
 end
 
-function snf{R}(M::AbstractMatrix{R})
+function snf{R}(M::AbstractMatrix{R}; inverse=true, debug=false)
     rows, cols = size(M)
-    U, Uinv, V, Vinv, D = init(M)
+    U, V, D, Uinv, Vinv = init(M, inverse=inverse)
 
     t = 1
     for j in 1:cols
-        # println("Working on column $j out of ", size(D,2))
-        # display(D)
+        debug && println("Working on column $j out of ", size(D,2))
+        debug && display(D)
 
-        countnz(D[:,j]) == 0 && continue
+        rcountnz(D,j) == 0 && continue
 
         prow = 1
         if D[t,t] != zero(R)
@@ -171,33 +194,33 @@ function snf{R}(M::AbstractMatrix{R})
             prow = idxs[i]
         end
 
-        # "Pivot Row selected: t = $t, pivot_row = $prow" |> println
-        # display(D)
-        # "Swapping rows. ( $t, $prow )" |> println
+        debug && "Pivot Row selected: t = $t, pivot_row = $prow" |> println
+        debug && display(D)
+        debug && "Swapping rows. ( $t, $prow )" |> println
 
-        rswap(D, t, prow)
-        rswap(Uinv, t, prow)
-        cswap(U, t, prow)
+        rswap!(D, t, prow)
+        inverse && rswap!(Uinv, t, prow)
+        cswap!(U, t, prow)
 
-        # println("Performing the pivot step at ($t, $j)")
-        # display(collect(D))
+        debug && println("Performing the pivot step at ($t, $j)")
+        debug && display(collect(D))
 
-        smithpivot(U, Uinv, V, Vinv, D, t, j)
+        smithpivot(U, Uinv, V, Vinv, D, t, j, inverse=inverse)
 
-        cswap(D, t, j)
-        cswap(Vinv, t, j)
-        rswap(V, t, j)
+        cswap!(D, t, j)
+        inverse && cswap!(Vinv, t, j)
+        rswap!(V, t, j)
 
         t += 1
 
-        # println("D: $(size(D))")
-        # display(collect(D))
-        # println("U: $(size(U))")
-        # display(collect(U))
-        # println("V: $(size(V))")
-        # display(collect(V))
-        # println("Vinv:")
-        # display(collect(Vinv))
+        debug && println("D: $(size(D))")
+        debug && display(collect(D))
+        debug && println("U: $(size(U))")
+        debug && display(collect(U))
+        debug && println("V: $(size(V))")
+        debug && display(collect(V))
+        debug && println("Vinv:")
+        debug && display(collect(Vinv))
     end
 
     # Make sure that d_i is divisible be d_{i+1}.
@@ -213,9 +236,9 @@ function snf{R}(M::AbstractMatrix{R})
             colelimination(Vinv, one(R), one(R), zero(R), one(R), i, i+1)
             rowelimination(V, one(R), zero(R), -one(R), one(R), i, i+1)
 
-            smithpivot(U, Uinv, V, Vinv, D, i, i)
+            smithpivot(U, Uinv, V, Vinv, D, i, i, inverse=inverse)
         end
     end
 
-    return U, Uinv, V, Vinv, D
+    return U, V, D, Uinv, Vinv
 end
