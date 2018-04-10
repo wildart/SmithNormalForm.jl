@@ -189,9 +189,16 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
         else
             # Good pivot row for j-th column is the one
             # that have a smallest number of elements
-            idxs = findn(D[:,j])
-            rsize, i = mapslices(x->count(!iszero, x), D[idxs, :], 2) |> findmin
-            prow = idxs[i]
+            rsize = typemax(R)
+            for i in 1:rows
+                if D[i,j] != zero(R)
+                    c = count(!iszero, view(D, i, :))
+                    if c < rsize
+                        rsize = c
+                        prow = i
+                    end
+                end
+            end
         end
 
         debug && "Pivot Row selected: t = $t, pivot_row = $prow" |> println
