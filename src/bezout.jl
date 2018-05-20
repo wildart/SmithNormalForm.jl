@@ -1,7 +1,7 @@
 """
 Calculates Bézout coefficients (see `gcdx`)
 """
-function bezout{R}(a::R, b::R)
+function bezout(a::R, b::R) where {R}
     rev = a < b
     x, y = rev ? (a,b) : (b,a)
 
