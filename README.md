@@ -40,19 +40,19 @@ julia> F.T
   87198265   514254012   533547528  244155142   351313913
          0  -109493940  -113601877          0     -536735
 
-julia> Diagonal(F.SNF)
+julia> diagm(F)
 3×5 Array{Int64,2}:
  1   0  0  0  0
  0  -1  0  0  0
  0   0  1  0  0
 
-julia> F[:SNF]
+julia> F.SNF
 3-element Array{Int64,1}:
   1
  -1
   1
 
-julia> F.S*Diagonal(F.SNF)*F.T
+julia> F.S*diagm(F)*F.T
 3×5 Array{Int64,2}:
  14  82  85  39  56
  70  51   4  68  23
