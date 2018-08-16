@@ -1,59 +1,44 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__()
-
 module SmithNormalForm
 
-import Base: show, getindex
+# import Base: show, getindex
+using LinearAlgebra
+using SparseArrays
 
-export snf, snfact
+export snf, smith
 
 include("bezout.jl")
 include("snf.jl")
 
-struct Smith{T,S<:AbstractMatrix} <: Factorization{T}
-    P::S
-    Pinv::S
-    Q::S
-    Qinv::S
-    A::AbstractVector{T}
-    Smith{T,S}(P::AbstractMatrix{T}, Pinv::AbstractMatrix{T},
-               Q::AbstractMatrix{T}, Qinv::AbstractMatrix{T},
-               A::AbstractVector{T}) where {T,S} = new(P, Pinv, Q, Qinv, A)
+struct Smith{P,Q<:AbstractMatrix} <: Factorization{P}
+    S::Q
+    Sinv::Q
+    T::Q
+    Tinv::Q
+    SNF::AbstractVector{P}
+    Smith{P,Q}(S::AbstractMatrix{P}, Sinv::AbstractMatrix{P},
+               T::AbstractMatrix{P}, Tinv::AbstractMatrix{P},
+               A::AbstractVector{P}) where {P,Q} = new(S, Sinv, T, Tinv, A)
 end
-Smith(P::AbstractMatrix{T}, Q::AbstractMatrix{T}, A::AbstractVector{T}) where {T} =
-    Smith{T,typeof(A)}(P, similar(P, 0, 0), Q, similar(Q, 0, 0), A)
+Smith(S::AbstractMatrix{P}, T::AbstractMatrix{P}, A::AbstractVector{P}) where {P} =
+    Smith{P,typeof(A)}(S, similar(S, 0, 0), T, similar(T, 0, 0), A)
 
-function snfact(X::AbstractMatrix{T}; inverse=true) where {T}
-    P, Q, A, Pinv, Qinv = snf(X, inverse=inverse)
-    return Smith{T, typeof(X)}(P, Pinv, Q, Qinv, diag(A))
+function smith(X::AbstractMatrix{P}; inverse=true) where {P}
+    S, T, A, Sinv, Tinv = snf(X, inverse=inverse)
+    return Smith{P, typeof(X)}(S, Sinv, T, Tinv, diag(A))
 end
 
-function getindex(F::Smith{T,S}, d::Symbol) where {T,S}
-    if d == :P
-        return F.P
-    elseif d == :Q
-        return F.Q
-    elseif d == :SNF
-        return F.A
-    elseif d == :A
-        return if S <: AbstractSparseMatrix
-            spdiagm(F.A)*speye(T, size(F.P,1), size(F.Q,1))
-        else
-            diagm(F.A)*eye(T, size(F.P,1), size(F.Q,1))
-        end
-    elseif d == :Pinv
-        @assert size(F.Pinv,1) != 0 "Inverse are not available, set `inverse` parameter when factorizing."
-        return F.Pinv
-    elseif d == :Qinv
-        @assert size(F.Pinv,1) != 0 "Inverse are not available, set `inverse` parameter when factorizing."
-        return F.Qinv
+"""Retrive SNF matrix from the factorization"""
+function LinearAlgebra.diagm(F::Smith{P,Q}) where {P,Q}
+    if issparse(F.SNF)
+        return sparse(Diagonal(F.SNF))*SparseMatrixCSC{P}(I, size(F.S,1), size(F.T,1))
     else
-        throw(KeyError(d))
+        return diagm(0=>F.SNF)*Matrix{P}(I, size(F.S,1), size(F.T,1))
     end
 end
 
-function show(io::IO, F::Smith)
+function Base.show(io::IO, F::Smith)
     println(io, "Smith normal form:")
-    show(io, F[:SNF])
+    show(io, diagm(F))
 end
 
 end # module

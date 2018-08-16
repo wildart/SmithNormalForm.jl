@@ -1,7 +1,7 @@
+using LinearAlgebra
+using SparseArrays
+using Test
 using SmithNormalForm
-using Base.Test
-
-srand(18743874873);
 
 @testset "Bezout" begin
     a = 12
@@ -29,42 +29,44 @@ end
         @test A[i,i] == -1
     end
 
-    P, Q, A, Pinv, Qinv = snf(sparse(M))
+    P, Q, A, Pinv, Qinv = snf(dropzeros(sparse(M)))
     @test issparse(A)
     @test P*A*Q == M
-    @test inv(collect(P)) == collect(Pinv)
-    @test inv(collect(Q)) == collect(Qinv)
+    @test inv(collect(P)) == Pinv
+    @test inv(collect(Q)) == Qinv
     @testset "sparse diag" for i in 1:4
         @test A[i,i] == -1
     end
 
     P, Q, A, Pinv, Qinv = snf(sparse(M), inverse=false)
     @test issparse(A)
-    @test size(Pinv) == (0,0)
-    @test size(Qinv) == (0,0)
+    @test iszero(Pinv)
+    @test iszero(Qinv)
     @test P*A*Q == M
     @testset "sparse diag" for i in 1:4
         @test A[i,i] == -1
     end
 
-    n = 3
-    m = 5
-    M = rand(1:100, n, m)
-    F = snfact(M)
-    @test !issparse(F[:P])
-    @test size(F[:P]) == (n,n)
-    @test size(F[:Q]) == (m,m)
-    @test size(F[:Pinv]) == (n,n)
-    @test size(F[:Qinv]) == (m,m)
-    @test all(F[:P]*F[:A]*F[:Q] .== M)
-    @test all(F[:P]*F[:Pinv] .== eye(eltype(F[:P]), size(F[:P])...))
-    @test all(F[:Q]*F[:Qinv] .== eye(eltype(F[:Q]), size(F[:Q])...))
+    # Factorization
+    M =[22  30  64  93  36;
+        45  42  22  11  67;
+        21   1  35  45  42]
+    n, m = size(M)
+    F = smith(M)
+    @test !issparse(F.SNF)
+    @test size(F.S) == (n,n)
+    @test size(F.T) == (m,m)
+    @test size(F.Sinv) == (n,n)
+    @test size(F.Tinv) == (m,m)
+    @test F.S*diagm(F)*F.T == M
+    @test F.S*F.Sinv == Matrix{eltype(F)}(I, n, n)
+    @test F.T*F.Tinv == Matrix{eltype(F)}(I, m, m)
 
-    F = snfact(sparse(M), inverse=false)
-    @test issparse(F[:P])
-    @test size(F[:P]) == (n,n)
-    @test size(F[:Q]) == (m,m)
-    @test all(F[:P]*F[:A]*F[:Q] .== M)
-    @test_throws AssertionError F[:Pinv]
-    @test_throws AssertionError F[:Qinv]
+    F = smith(sparse(M), inverse=false)
+    @test issparse(F.SNF)
+    @test size(F.S) == (n,n)
+    @test size(F.T) == (m,m)
+    @test F.S*diagm(F)*F.T == M
+    @test iszero(F.Sinv)
+    @test iszero(F.Tinv)
 end

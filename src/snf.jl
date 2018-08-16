@@ -83,13 +83,13 @@ function rowpivot(U::AbstractArray{R,2},
                   Uinv::AbstractArray{R,2},
                   D::AbstractArray{R,2},
                   i, j; inverse=true) where {R}
-    for k in findn(D[:,j]) |> reverse
+    for k in reverse!(findall(!iszero, view(D, :, j)))
         a = D[i,j]
         b = D[k,j]
 
         i == k && continue
 
-        s,t,g = bezout(a, b)
+        s, t, g = bezout(a, b)
         x = divide(a, g)
         y = divide(b, g)
 
@@ -103,7 +103,7 @@ function colpivot(V::AbstractArray{R,2},
                   Vinv::AbstractArray{R,2},
                   D::AbstractArray{R,2},
                   i, j; inverse=true) where {R}
-    for k in findn(D[i,:])|> reverse
+    for k in reverse!(findall(!iszero, view(D, i, :)))
         a = D[i,j]
         b = D[i,k]
 
@@ -247,5 +247,9 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
         end
     end
 
-    return U, V, D, Uinv, Vinv
+    if issparse(D)
+        return dropzeros!(U), dropzeros!(V), dropzeros!(D), dropzeros!(Uinv), dropzeros!(Vinv)
+    else
+        return U, V, D, Uinv, Vinv
+    end
 end
