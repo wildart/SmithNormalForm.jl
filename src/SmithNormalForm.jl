@@ -29,11 +29,11 @@ end
 
 """Retrive SNF matrix from the factorization"""
 function LinearAlgebra.diagm(F::Smith{P,Q}) where {P,Q}
-    if issparse(F.SNF)
-        return sparse(Diagonal(F.SNF))*SparseMatrixCSC{P}(I, size(F.S,1), size(F.T,1))
-    else
-        return diagm(0=>F.SNF)*Matrix{P}(I, size(F.S,1), size(F.T,1))
+    base = issparse(F.SNF) ? spzeros(P, size(F.S,1), size(F.T,1)) : zeros(P, size(F.S,1), size(F.T,1))
+    for i in 1:length(F.SNF)
+        base[i,i] = F.SNF[i]
     end
+    return base
 end
 
 function Base.show(io::IO, F::Smith)
