@@ -8,8 +8,10 @@ using SmithNormalForm
     b = 42
 
     s,t,g = SmithNormalForm.bezout(a,b)
-
     @test s*a + t*b == g
+
+    s,t,g = SmithNormalForm.bezout(b,a)
+    @test s*b + t*a == g
 end
 
 @testset "Smith Normal Form" begin

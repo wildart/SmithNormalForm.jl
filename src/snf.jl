@@ -179,7 +179,7 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
     t = 1
     for j in 1:cols
         debug && println("Working on column $j out of ", size(D,2))
-        debug && display(D)
+        debug && display(collect(D))
 
         rcountnz(D,j) == 0 && continue
 
@@ -202,14 +202,14 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
         end
 
         debug && "Pivot Row selected: t = $t, pivot_row = $prow" |> println
-        debug && display(D)
+        debug && display(collect(D))
         debug && "Swapping rows. ( $t, $prow )" |> println
 
         rswap!(D, t, prow)
         inverse && rswap!(Uinv, t, prow)
         cswap!(U, t, prow)
 
-        debug && println("Performing the pivot step at ($t, $j)")
+        debug && println("Performing the pivot step at (t=$t, j=$j)")
         debug && display(collect(D))
 
         smithpivot(U, Uinv, V, Vinv, D, t, j, inverse=inverse)

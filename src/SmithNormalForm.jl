@@ -22,8 +22,8 @@ end
 Smith(S::AbstractMatrix{P}, T::AbstractMatrix{P}, A::AbstractVector{P}) where {P} =
     Smith{P,typeof(A)}(S, similar(S, 0, 0), T, similar(T, 0, 0), A)
 
-function smith(X::AbstractMatrix{P}; inverse=true) where {P}
-    S, T, A, Sinv, Tinv = snf(X, inverse=inverse)
+function smith(X::AbstractMatrix{P}; inverse=true, debug=false) where {P}
+    S, T, A, Sinv, Tinv = snf(X, inverse=inverse, debug=debug)
     return Smith{P, typeof(X)}(S, Sinv, T, Tinv, diag(A))
 end
 
