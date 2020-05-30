@@ -9,8 +9,12 @@ using SmithNormalForm
 
     s,t,g = SmithNormalForm.bezout(a,b)
     @test s*a + t*b == g
+    g,s,t = gcdx(a,b)
+    @test s*a + t*b == g
 
     s,t,g = SmithNormalForm.bezout(b,a)
+    @test s*b + t*a == g
+    g,s,t = gcdx(b,a)
     @test s*b + t*a == g
 end
 
@@ -28,7 +32,7 @@ end
     @test inv(P) == Pinv
     @test inv(Q) == Qinv
     @testset "dense diag" for i in 1:4
-        @test A[i,i] == -1
+        @test A[i,i] == 1
     end
 
     P, Q, A, Pinv, Qinv = snf(dropzeros(sparse(M)))
@@ -37,7 +41,7 @@ end
     @test inv(collect(P)) == Pinv
     @test inv(collect(Q)) == Qinv
     @testset "sparse diag" for i in 1:4
-        @test A[i,i] == -1
+        @test A[i,i] == 1
     end
 
     P, Q, A, Pinv, Qinv = snf(sparse(M), inverse=false)
@@ -46,7 +50,7 @@ end
     @test iszero(Qinv)
     @test P*A*Q == M
     @testset "sparse diag" for i in 1:4
-        @test A[i,i] == -1
+        @test A[i,i] == 1
     end
 
     # Factorization
@@ -71,4 +75,10 @@ end
     @test F.S*diagm(F)*F.T == M
     @test iszero(F.Sinv)
     @test iszero(F.Tinv)
+
+    # https://en.wikipedia.org/wiki/Smith_normal_form#Example
+    M = [2 4 4; -6 6 12; 10 -4 -16]
+    F = smith(M, inverse=true)
+    @test F.SNF == [2, 6, 12]
+    @test F.S*diagm(F)*F.T == M
 end

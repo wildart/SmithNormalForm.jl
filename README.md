@@ -4,11 +4,15 @@
 [![Coverage Status](https://coveralls.io/repos/wildart/SmithNormalForm.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/wildart/SmithNormalForm.jl?branch=master)
 
 
-The [Smith normal form](https://en.wikipedia.org/wiki/Smith_normal_form) decomposition implementation in Julia. *Note:* Works only over integer domain.
+The [Smith normal form](https://en.wikipedia.org/wiki/Smith_normal_form) decomposition over integer domain implementation in Julia.
 
 ## Installation
+
+For Julia 1.1+, add [BoffinStuff](https://github.com/wildart/BoffinStuff.git) registry in the package manager, and proceed with the installation:
+
 ```
-pkg> add https://github.com/wildart/SmithNormalForm.jl.git#0.2.0
+pkg> registry add https://github.com/wildart/BoffinStuff.git
+pkg> add SmithNormalForm
 ```
 
 ## Example
@@ -16,45 +20,37 @@ pkg> add https://github.com/wildart/SmithNormalForm.jl.git#0.2.0
 ```julia
 julia> using SmithNormalForm, LinearAlgebra
 
-julia> X = rand(1:100, 3, 5)
-3×5 Array{Int64,2}:
- 14  82  85  39  56
- 70  51   4  68  23
- 58  27  87   1  52
+julia> M = [2 4 4; -6 6 12; 10 -4 -16]
+3×3 Array{Int64,2}:
+  2   4    4
+ -6   6   12
+ 10  -4  -16
 
-julia> F = smith(X)
+julia> F = smith(M)
 Smith normal form:
-[1, -1, 1]
+[2 0 0; 0 6 0; 0 0 12]
 
 julia> F.S
 3×3 Array{Int64,2}:
-   1      0  0
- 640      1  0
- 807  29427  1
+  1   0  0
+ -3   1  0
+  5  -2  1
 
 julia> F.T
-5×5 Array{Int64,2}:
-        14          82          85         39          56
-      8890       52429       54396      24892       35817
- 261594790  1542762036  1600642584  732465412  1053941719
-  87198265   514254012   533547528  244155142   351313913
-         0  -109493940  -113601877          0     -536735
+3×3 Array{Int64,2}:
+ 1  2  2
+ 0  3  4
+ 0  1  1
 
 julia> diagm(F)
-3×5 Array{Int64,2}:
- 1   0  0  0  0
- 0  -1  0  0  0
- 0   0  1  0  0
-
-julia> F.SNF
-3-element Array{Int64,1}:
-  1
- -1
-  1
+3×3 Array{Int64,2}:
+ 2  0   0
+ 0  6   0
+ 0  0  12
 
 julia> F.S*diagm(F)*F.T
-3×5 Array{Int64,2}:
- 14  82  85  39  56
- 70  51   4  68  23
- 58  27  87   1  52
+3×3 Array{Int64,2}:
+  2   4    4
+ -6   6   12
+ 10  -4  -16
 ```

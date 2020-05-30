@@ -172,14 +172,15 @@ function init(M::AbstractMatrix{R}; inverse=true) where {R}
     return U, V, D, Uinv, Vinv
 end
 
-function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
+formatmtx(M) =  size(M,1) == 0 ? "[]" : repr(collect(M); context=IOContext(stdout, :compact => true))
+
+function snf(M::AbstractMatrix{R}; inverse=true) where {R}
     rows, cols = size(M)
     U, V, D, Uinv, Vinv = init(M, inverse=inverse)
 
     t = 1
     for j in 1:cols
-        debug && println("Working on column $j out of ", size(D,2))
-        debug && display(collect(D))
+        @debug "Working on column $j out of $cols" D=formatmtx(D)
 
         rcountnz(D,j) == 0 && continue
 
@@ -201,17 +202,12 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
             end
         end
 
-        debug && "Pivot Row selected: t = $t, pivot_row = $prow" |> println
-        debug && display(collect(D))
-        debug && "Swapping rows. ( $t, $prow )" |> println
-
+        @debug "Pivot Row selected: t = $t, pivot = $prow" D=formatmtx(D)
         rswap!(D, t, prow)
         inverse && rswap!(Uinv, t, prow)
         cswap!(U, t, prow)
 
-        debug && println("Performing the pivot step at (t=$t, j=$j)")
-        debug && display(collect(D))
-
+        @debug "Performing the pivot step at (t=$t, j=$j)" D=formatmtx(D)
         smithpivot(U, Uinv, V, Vinv, D, t, j, inverse=inverse)
 
         cswap!(D, t, j)
@@ -220,14 +216,7 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
 
         t += 1
 
-        debug && println("D: $(size(D))")
-        debug && display(collect(D))
-        debug && println("U: $(size(U))")
-        debug && display(collect(U))
-        debug && println("V: $(size(V))")
-        debug && display(collect(V))
-        debug && println("Vinv:")
-        debug && display(collect(Vinv))
+        @logmsg (Base.CoreLogging.Debug-1) "Factorization" D=formatmtx(D) U=formatmtx(U) V=formatmtx(V) U⁻¹=formatmtx(Uinv) V⁻¹=formatmtx(Vinv)
     end
 
     # Make sure that d_i is divisible be d_{i+1}.
@@ -246,6 +235,22 @@ function snf(M::AbstractMatrix{R}; inverse=true, debug=false) where {R}
             smithpivot(U, Uinv, V, Vinv, D, i, i, inverse=inverse)
         end
     end
+
+    # To guarantee SNFⱼ = Λⱼ ≥ 0 we absorb the sign of Λ into T and T⁻¹, s.t.
+    #    Λ′ = Λ*sign(Λ),   T′ = sign(Λ)*T,    and    T⁻¹′ = T⁻¹*sign(Λ),
+    # with the convention that sign(0) = 1. Then we still have that X = SΛT = SΛ′T′
+    # and also that Λ = S⁻¹XT⁻¹ ⇒ Λ′ = S⁻¹XT⁻¹′.
+    for j in 1:rows
+        Λⱼ = D[j,j]
+        if Λⱼ < 0
+            @views V[j,:]    .*= -1 # T′   = sign(Λ)*T    [rows]
+            if inverse
+                @views Vinv[:,j] .*= -1 # T⁻¹′ = T⁻¹*sign(Λ)  [columns]
+            end
+            D[j,j] = abs(Λⱼ)        # Λ′ = Λ*sign(Λ)
+        end
+    end
+    @logmsg (Base.CoreLogging.Debug-1) "Factorization" D=formatmtx(D) U=formatmtx(U) V=formatmtx(V) U⁻¹=formatmtx(Uinv) V⁻¹=formatmtx(Vinv)
 
     if issparse(D)
         return dropzeros!(U), dropzeros!(V), dropzeros!(D), dropzeros!(Uinv), dropzeros!(Vinv)
