@@ -13,68 +13,64 @@ function divide(y::R, x::R) where {R}
     end
 end
 
-function rcountnz(X, i)
-    n = size(X, 1)
+function rcountnz(X::AbstractMatrix{R}, i) where {R}
     c = 0
-    for j in 1:n
-        if X[j, i] != 0
+    z = zero(R)
+    @inbounds for row in eachrow(X)
+        if row[i] != z
            c += 1
         end
     end
     return c
 end
 
-function ccountnz(X, j)
-    m = size(X, 2)
+function ccountnz(X::AbstractMatrix{R}, j) where {R}
     c = 0
-    for i in 1:m
-        if X[j, i] != 0
+    z = zero(R)
+    @inbounds for col in eachcol(X)
+        if col[j] != z
            c += 1
         end
     end
     return c
 end
 
-function rswap!(M::AbstractArray{R,2}, r1::Int, r2::Int) where {R}
+function rswap!(M::AbstractMatrix, r1::Int, r2::Int)
     r1 == r2 && return M
-    m = size(M, 2)
-    @inbounds for i in 1:m
-        tmp = M[r1, i]
-        M[r1, i] = M[r2, i]
-        M[r2, i] = tmp
+    @inbounds for col in eachcol(M)
+        tmp = col[r1]
+        col[r1] = col[r2]
+        col[r2] = tmp
     end
     return M
 end
 
-function cswap!(M::AbstractArray{R,2}, c1::Int, c2::Int) where {R}
+function cswap!(M::AbstractMatrix, c1::Int, c2::Int)
     c1 == c2 && return M
-    n = size(M, 1)
-    @inbounds for j in 1:n
-        tmp = M[j, c1]
-        M[j, c1] = M[j, c2]
-        M[j, c2] = tmp
+    @inbounds for row in eachrow(M)
+        tmp = row[c1]
+        row[c1] = row[c2]
+        row[c2] = tmp
     end
     return M
 end
 
-function rowelimination(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int) where {R}
-    m = size(D, 2)
-    @inbounds for k in 1:m
-        t = D[i,k]
-        s = D[j,k]
-        D[i,k] = a*t + b*s
-        D[j,k] = c*t + d*s
+function rowelimination(D::AbstractMatrix{R}, a::R, b::R, c::R, d::R, i::Int, j::Int) where {R}
+    @inbounds for col in eachcol(D)
+        t = col[i]
+        s = col[j]
+        col[i] = a*t + b*s
+        col[j] = c*t + d*s
     end
     return D
 end
 
-function colelimination(D::AbstractArray{R,2}, a::R, b::R, c::R, d::R, i::Int, j::Int) where {R}
-    n = size(D, 1)
-    @inbounds for k in 1:n
-        t = D[k,i]
-        s = D[k,j]
-        D[k,i] = a*t + b*s
-        D[k,j] = c*t + d*s
+function colelimination(D::AbstractMatrix{R}, a::R, b::R, c::R, d::R, i::Int, j::Int) where {R}
+    @inbounds for row in eachrow(D)
+        t = row[i]
+        s = row[j]
+        row[i] = a*t + b*s
+        row[j] = c*t + d*s
     end
     return D
 end
