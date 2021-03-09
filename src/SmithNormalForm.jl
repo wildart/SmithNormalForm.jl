@@ -5,6 +5,7 @@ using LinearAlgebra
 using SparseArrays
 using Base.CoreLogging
 
+import Base: show, summary
 import LinearAlgebra: diagm, diag
 
 export snf, smith, Smith
@@ -65,6 +66,15 @@ Return the invariant factors (or, equivalently, the elementary divisors) of a Sm
 form `F`.
 """
 diag(F::Smith) = F.SNF
+
+summary(io::IO, F::Smith{P,Q,V}) where {P,Q,V} = print(io, "Smith{", P, ",", Q, ",", V, "}")
+function show(io::IO, ::MIME"text/plain", F::Smith)
+    summary(io, F)
+    println(io, " with:")
+    Base.print_matrix(io, diagm(F), " Λ = "); println(io)
+    Base.print_matrix(io, F.S, " S = "); println(io)
+    Base.print_matrix(io, F.T, " T = ")
+    return nothing
 end
 
 end # module
