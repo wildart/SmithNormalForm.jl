@@ -5,8 +5,7 @@ using LinearAlgebra
 using SparseArrays
 using Base.CoreLogging
 
-import Base: show
-import LinearAlgebra: diagm
+import LinearAlgebra: diagm, diag
 
 export snf, smith, Smith
 
@@ -48,18 +47,24 @@ function smith(X::AbstractMatrix{P}; inverse::Bool=true) where {P}
     return Smith{P, typeof(X), typeof(SNF)}(S, Sinv, T, Tinv, SNF)
 end
 
-"""Retrive SNF matrix from the factorization"""
-function diagm(F::Smith{P,Q}) where {P,Q}
-    base = issparse(F.SNF) ? spzeros(P, size(F.S,1), size(F.T,1)) : zeros(P, size(F.S,1), size(F.T,1))
-    for i in 1:length(F.SNF)
-        base[i,i] = F.SNF[i]
-    end
-    return base
+"""
+    diagm(F::Smith) --> AbstractMatrix
+
+Return the Smith normal form diagonal matrix `Λ` from a factorization `F`.
+"""
+function diagm(F::Smith)
+    rows = size(F.S, 1)
+    cols = size(F.T, 1)
+    return issparse(F.SNF) ? spdiagm(rows, cols, F.SNF) : diagm(rows, cols, F.SNF)
 end
 
-function show(io::IO, F::Smith)
-    println(io, "Smith normal form:")
-    show(io, diagm(F))
+"""
+    diag(F::Smith) --> AbstractVector
+
+Return the invariant factors (or, equivalently, the elementary divisors) of a Smith normal
+form `F`.
+"""
+diag(F::Smith) = F.SNF
 end
 
 end # module
