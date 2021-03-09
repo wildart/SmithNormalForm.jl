@@ -1,6 +1,5 @@
 module SmithNormalForm
 
-# import Base: show, getindex
 using LinearAlgebra
 using SparseArrays
 using Base.CoreLogging
@@ -13,6 +12,7 @@ export snf, smith, Smith
 include("bezout.jl")
 include("snf.jl")
 
+# ---------------------------------------------------------------------------------------- #
 
 struct Smith{P,Q<:AbstractMatrix{P},V<:AbstractVector{P}} <: Factorization{P}
     S::Q
@@ -26,6 +26,8 @@ struct Smith{P,Q<:AbstractMatrix{P},V<:AbstractVector{P}} <: Factorization{P}
 end
 Smith(S::AbstractMatrix{P}, T::AbstractMatrix{P}, SNF::AbstractVector{P}) where {P} =
     Smith{P,typeof(S),typeof(SNF)}(S, similar(S, 0, 0), T, similar(T, 0, 0), SNF)
+
+# ---------------------------------------------------------------------------------------- #
 
 """
     smith(X::AbstractMatrix{P}; inverse::Bool=true) --> Smith{P,Q,V}
@@ -47,6 +49,8 @@ function smith(X::AbstractMatrix{P}; inverse::Bool=true) where {P}
     SNF = diag(D)
     return Smith{P, typeof(X), typeof(SNF)}(S, Sinv, T, Tinv, SNF)
 end
+
+# ---------------------------------------------------------------------------------------- #
 
 """
     diagm(F::Smith) --> AbstractMatrix
