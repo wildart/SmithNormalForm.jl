@@ -57,10 +57,14 @@ end
 
 Return the Smith normal form diagonal matrix `Λ` from a factorization `F`.
 """
-function diagm(F::Smith)
+function diagm(F::Smith{P}) where P
     rows = size(F.S, 1)
     cols = size(F.T, 1)
-    return issparse(F.SNF) ? spdiagm(rows, cols, F.SNF) : diagm(rows, cols, F.SNF)
+    D    = issparse(F.SNF) ? spzeros(P, rows, cols) : zeros(P, rows, cols)
+    for (i,Λᵢ) in enumerate(diag(F))
+        D[i,i] = Λᵢ
+    end
+    return D
 end
 
 """
