@@ -186,7 +186,11 @@ function snf(M::AbstractMatrix{R}; inverse=true) where {R}
         else
             # Good pivot row for j-th column is the one
             # that have a smallest number of elements
-            rsize = typemax(R)
+	    if R == BigInt
+		rsize=Inf
+	    else
+		rsize = typemax(R)
+	    end
             for i in 1:rows
                 if D[i,j] != zero(R)
                     c = count(!iszero, view(D, i, :))
